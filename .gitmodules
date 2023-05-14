@@ -1,0 +1,3 @@
+[submodule "lib/isocline"]
+	path = lib/isocline
+	url = https://github.com/daanx/isocline
