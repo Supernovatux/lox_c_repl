@@ -6,7 +6,7 @@
 #include <string.h>
 char *prompt = "lox> ";
 static void highlighter(ic_highlight_env_t *henv, const char *input, void *arg);
-static void completer(ic_completion_env_t *cenv, const char *prefix);
+static void completer(ic_completion_env_t *cenv, const char *input);
 char *get_prompt(void) { return prompt; }
 char *set_prompt(char *new_prompt) {
   prompt = new_prompt;
@@ -23,14 +23,15 @@ int init_repl() {
   ic_enable_hint(true);
   return 0;
 }
-int readline(char *input) {
+char* readline() {
+    char *input;
   while ((input = ic_readline(get_prompt())) !=
          NULL) // ctrl-d returns NULL (as well as errors)
   {
     bool stop = (strcmp(input, "exit") == 0 || strcmp(input, "") == 0);
     if (stop)
       break;
-    return 1;
+    return input;
   }
   ic_println("done");
   exit(0);

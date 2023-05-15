@@ -8,13 +8,30 @@
 #include <stdlib.h>
 #include <string.h>
 static void repl() {
-  char *line;
+  char line[1024];
   for (;;) {
-    readline(line);
+    printf("> ");
+    // Clear line
+    for (int i = 0; i < 1024; i++) {
+      line[i] = '\0';
+    }
+    if (!fgets(line, sizeof(line), stdin)) {
+      printf("\n");
+      break;
+    }
+
     interpret(line);
-    free(line);
   }
 }
+// static void repl() {
+//   init_repl();
+//   char *line = NULL;
+//   for (;;) {
+//     line = readline();
+//     interpret(line);
+//     free(line);
+//   }
+// }
 static char *readFile(const char *path) {
   FILE *file = fopen(path, "rb");
   if (file == NULL) {

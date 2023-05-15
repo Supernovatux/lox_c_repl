@@ -21,4 +21,30 @@ void freeValueArray(ValueArray *array) {
   FREE_ARRAY(Value, array->values, array->capacity);
   initValueArray(array);
 }
-void printValue(Value value) { ic_printf("%g", value); }
+void printValue(Value value) {
+  switch (value.type) {
+  case VAL_BOOL:
+    ic_printf(AS_BOOL(value) ? "true" : "false");
+    break;
+  case VAL_NIL:
+    ic_printf("nil");
+    break;
+  case VAL_NUMBER:
+    ic_printf("%g", AS_NUMBER(value));
+    break;
+  }
+}
+bool valuesEqual(Value a, Value b) {
+  if (a.type != b.type)
+    return false;
+  switch (a.type) {
+  case VAL_BOOL:
+    return AS_BOOL(a) == AS_BOOL(b);
+  case VAL_NIL:
+    return true;
+  case VAL_NUMBER:
+    return AS_NUMBER(a) == AS_NUMBER(b);
+  default:
+    return false; // Unreachable.
+  }
+}

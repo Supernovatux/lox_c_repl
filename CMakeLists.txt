@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.25)
+set(CMAKE_GENERATOR "Ninja")
+project(clox C)
+add_executable(clox)
+target_compile_features(clox PRIVATE c_std_11)
+target_include_directories(clox PRIVATE include ./lib/isocline/include/)
+file(GLOB_RECURSE SOURCES src/*.c ./lib/isocline/src/isocline.c)
+target_sources(clox PRIVATE ${SOURCES})
+set(BUILDDIR ${CMAKE_CURRENT_BINARY_DIR}/build)
+file(MAKE_DIRECTORY ${BUILDDIR})
+
