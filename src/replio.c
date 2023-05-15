@@ -23,16 +23,18 @@ int init_repl() {
   ic_enable_hint(true);
   return 0;
 }
-void readline(char *input) {
+int readline(char *input) {
   while ((input = ic_readline(get_prompt())) !=
          NULL) // ctrl-d returns NULL (as well as errors)
   {
     bool stop = (strcmp(input, "exit") == 0 || strcmp(input, "") == 0);
     if (stop)
       break;
+    return 1;
   }
   ic_println("done");
   exit(0);
+  return 0;
 }
 // -------------------------------------------------------------------------------
 // Completion
