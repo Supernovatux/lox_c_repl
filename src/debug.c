@@ -12,6 +12,11 @@ static int simpleInstruction(const char *name, int offset) {
   printf("%s\n", name);
   return offset + 1;
 }
+static int byteInstruction(const char *name, Chunk *chunk, int offset) {
+  uint8_t slot = chunk->code[offset + 1];
+  printf("%-16s %4d\n", name, slot);
+  return offset + 2;
+}
 static int constantInstruction(const char *name, Chunk *chunk, int offset) {
   uint8_t constant = chunk->code[offset + 1];
   printf("%-16s %4d '", name, constant);
@@ -19,6 +24,14 @@ static int constantInstruction(const char *name, Chunk *chunk, int offset) {
   printf("'\n");
   return offset + 2;
 }
+static int jumpInstruction(const char *name, int sign, Chunk *chunk,
+                           int offset) {
+  uint16_t jump = (uint16_t)(chunk->code[offset + 1] << 8);
+  jump |= chunk->code[offset + 2];
+  printf("%-16s %4d -> %d\n", name, offset, offset + 3 + sign * jump);
+  return offset + 3;
+}
+
 int disassembleInstruction(Chunk *chunk, int offset) {
   printf("%04d ", offset);
   if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1]) {
@@ -50,6 +63,10 @@ int disassembleInstruction(Chunk *chunk, int offset) {
     return simpleInstruction("OP_TRUE", offset);
   case OP_FALSE:
     return simpleInstruction("OP_FALSE", offset);
+  case OP_JUMP:
+    return jumpInstruction("OP_JUMP", 1, chunk, offset);
+  case OP_JUMP_IF_FALSE:
+    return jumpInstruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
   case OP_EQUAL:
     return simpleInstruction("OP_EQUAL", offset);
   case OP_GREATER:
@@ -64,6 +81,12 @@ int disassembleInstruction(Chunk *chunk, int offset) {
     return simpleInstruction("OP_NOTEQ", offset);
   case OP_PRINT:
     return simpleInstruction("OP_PRINT", offset);
+  case OP_GET_LOCAL:
+    return byteInstruction("OP_GET_LOCAL", chunk, offset);
+  case OP_SET_LOCAL:
+    return byteInstruction("OP_SET_LOCAL", chunk, offset);
+  case OP_LOOP:
+    return jumpInstruction("OP_LOOP", -1, chunk, offset);
   case OP_GET_GLOBAL:
     return constantInstruction("OP_GET_GLOBAL", chunk, offset);
   case OP_SET_GLOBAL:

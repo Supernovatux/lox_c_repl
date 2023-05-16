@@ -177,18 +177,17 @@ static Token identifier() {
 Token scanToken() {
   skipWhitespace();
   scanner.start = scanner.current;
+  if (isAtEnd())
+    return makeToken(TOKEN_EOF);
   char c = advance();
   if (isAlpha(c))
     return identifier();
-  if (isAtEnd())
-    return makeToken(TOKEN_EOF);
+
   if (isDigit(c))
     return number();
   switch (c) {
   case '(':
     return makeToken(TOKEN_LEFT_PAREN);
-      case '\0':
-          return makeToken(TOKEN_EOF);
   case ')':
     return makeToken(TOKEN_RIGHT_PAREN);
   case '{':
