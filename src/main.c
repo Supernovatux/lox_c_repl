@@ -1,7 +1,6 @@
 #include "chunk.h"
 #include "common.h"
 #include "debug.h"
-#include "isocline.h"
 #include "replio.h"
 #include "stdio.h"
 #include "vm.h"
@@ -75,7 +74,7 @@ int main(int argc, const char *argv[]) {
   } else if (argc == 2) {
     runFile(argv[1]);
   } else {
-    ic_printf("[red]Usage: clox [path]\n[/red]");
+    printf("Usage: clox [path]\n");
     exit(64);
   }
   freeVM();

@@ -1,3 +1,4 @@
+#ifdef INTERACTIVE_REPL
 #include "replio.h"
 #include "isocline.h"
 #include <locale.h>
@@ -23,8 +24,8 @@ int init_repl() {
   ic_enable_hint(true);
   return 0;
 }
-char* readline() {
-    char *input;
+char *readline() {
+  char *input;
   while ((input = ic_readline(get_prompt())) !=
          NULL) // ctrl-d returns NULL (as well as errors)
   {
@@ -153,3 +154,4 @@ static void highlighter(ic_highlight_env_t *henv, const char *input,
     }
   }
 }
+#endif

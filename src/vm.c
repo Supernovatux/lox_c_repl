@@ -3,9 +3,12 @@
 #include "common.h"
 #include "compiler.h"
 #include "debug.h"
-#include "isocline.h"
+#include "memory.h"
+#include "object.h"
+#include "stdarg.h"
 #include "value.h"
 #include <stdio.h>
+#include <string.h>
 VM vm;
 static void resetStack() { vm.stackTop = vm.stack; }
 static void runtimeError(const char *format, ...) {
@@ -20,9 +23,17 @@ static void runtimeError(const char *format, ...) {
   fprintf(stderr, "[line %d] in script\n", line);
   resetStack();
 }
-void initVM() { resetStack(); }
-
-void freeVM() {}
+void initVM() {
+  resetStack();
+  vm.objects = NULL;
+  initTable(&vm.strings);
+  initTable(&vm.globals);
+}
+void freeVM() {
+  freeTable(&vm.globals);
+  freeTable(&vm.strings);
+  freeObjects();
+}
 void push(Value value) {
   *vm.stackTop = value;
   vm.stackTop++;
@@ -34,6 +45,19 @@ Value pop() {
 static Value peek(int distance) { return vm.stackTop[-1 - distance]; }
 static bool isFalsey(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+static void concatenate() {
+  ObjString *b = AS_STRING(pop());
+  ObjString *a = AS_STRING(pop());
+
+  int length = a->length + b->length;
+  char *chars = ALLOCATE(char, length + 1);
+  memcpy(chars, a->chars, a->length);
+  memcpy(chars + a->length, b->chars, b->length);
+  chars[length] = '\0';
+
+  ObjString *result = takeString(chars, length);
+  push(OBJ_VAL(result));
 }
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
@@ -47,7 +71,7 @@ static InterpretResult run() {
     double b = AS_NUMBER(pop());                                               \
     vm.stackTop[-1] = valueType(AS_NUMBER(vm.stackTop[-1]) op b);              \
   } while (false)
-
+#define READ_STRING() AS_STRING(READ_CONSTANT())
   for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
     ic_printf("          ");
@@ -73,9 +97,19 @@ static InterpretResult run() {
     case OP_LESSEQ:
       BINARY_OP(BOOL_VAL, <=);
       break;
-    case OP_ADD:
-      BINARY_OP(NUMBER_VAL, +);
+    case OP_ADD: {
+      if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+        concatenate();
+      } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+        double b = AS_NUMBER(pop());
+        double a = AS_NUMBER(pop());
+        push(NUMBER_VAL(a + b));
+      } else {
+        runtimeError("Operands must be two numbers or two strings.");
+        return INTERPRET_RUNTIME_ERROR;
+      }
       break;
+    }
     case OP_SUBTRACT:
       BINARY_OP(NUMBER_VAL, -);
       break;
@@ -85,6 +119,34 @@ static InterpretResult run() {
     case OP_DIVIDE:
       BINARY_OP(NUMBER_VAL, /);
       break;
+    case OP_POP:
+      pop();
+      break;
+    case OP_GET_GLOBAL: {
+      ObjString *name = READ_STRING();
+      Value value;
+      if (!tableGet(&vm.globals, name, &value)) {
+        runtimeError("Undefined variable '%s'.", name->chars);
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      push(value);
+      break;
+    }
+    case OP_DEFINE_GLOBAL: {
+      ObjString *name = READ_STRING();
+      tableSet(&vm.globals, name, peek(0));
+      pop();
+      break;
+    }
+    case OP_SET_GLOBAL: {
+      ObjString *name = READ_STRING();
+      if (tableSet(&vm.globals, name, peek(0))) {
+        tableDelete(&vm.globals, name);
+        runtimeError("Undefined variable '%s'.", name->chars);
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      break;
+    }
     case OP_EQUAL: {
       // Todo: micro-optimize this
       Value b = pop();
@@ -110,9 +172,12 @@ static InterpretResult run() {
       vm.stackTop[-1] = NUMBER_VAL(-AS_NUMBER(vm.stackTop[-1]));
       break;
     case OP_RETURN: {
-      printValue(pop());
-      ic_printf("\n");
       return INTERPRET_OK;
+    }
+    case OP_PRINT: {
+      printValue(pop());
+      printf("\n");
+      break;
     }
     case OP_CONSTANT: {
       Value constant = READ_CONSTANT();
@@ -133,6 +198,7 @@ static InterpretResult run() {
 
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef READ_STRING
 #undef BINARY_OP
 }
 InterpretResult interpret(const char *source) {

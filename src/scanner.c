@@ -187,6 +187,8 @@ Token scanToken() {
   switch (c) {
   case '(':
     return makeToken(TOKEN_LEFT_PAREN);
+      case '\0':
+          return makeToken(TOKEN_EOF);
   case ')':
     return makeToken(TOKEN_RIGHT_PAREN);
   case '{':

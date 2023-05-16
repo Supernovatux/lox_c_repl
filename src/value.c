@@ -1,6 +1,8 @@
 #include "value.h"
 #include "memory.h"
-#include <isocline.h>
+#include "object.h"
+#include <stdio.h>
+#include <string.h>
 void initValueArray(ValueArray *array) {
   array->values = NULL;
   array->capacity = 0;
@@ -24,13 +26,16 @@ void freeValueArray(ValueArray *array) {
 void printValue(Value value) {
   switch (value.type) {
   case VAL_BOOL:
-    ic_printf(AS_BOOL(value) ? "true" : "false");
+    printf(AS_BOOL(value) ? "true" : "false");
     break;
   case VAL_NIL:
-    ic_printf("nil");
+    printf("nil");
     break;
   case VAL_NUMBER:
-    ic_printf("%g", AS_NUMBER(value));
+    printf("%g", AS_NUMBER(value));
+    break;
+  case VAL_OBJ:
+    printObject(value);
     break;
   }
 }
@@ -44,6 +49,8 @@ bool valuesEqual(Value a, Value b) {
     return true;
   case VAL_NUMBER:
     return AS_NUMBER(a) == AS_NUMBER(b);
+  case VAL_OBJ:
+    return AS_OBJ(a) == AS_OBJ(b);
   default:
     return false; // Unreachable.
   }

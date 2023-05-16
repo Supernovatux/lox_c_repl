@@ -1,3 +1,2 @@
 -Iinclude
--Ilib/isocline/include
 -std=c11
